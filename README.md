@@ -1,8 +1,8 @@
-# RedNote Translate — live Xiaohongshu (小红书) translation overlay for Android
+# RedNote Translate: live Xiaohongshu (小红书) translation overlay for Android
 
 Translate RedNote into English as you scroll. This Android app covers the Chinese text
 in RedNote (Xiaohongshu, 小红书, `com.xingin.xhs`) with a translation drawn in place, the
-way a browser extension rewrites a web page — post titles, note bodies, comments and
+way a browser extension rewrites a web page, that is to say, post titles, note bodies, comments, and
 usernames, live, while you browse.
 
 It does **not** use RedNote's own auto-translate, so your feed and recommendations stay
