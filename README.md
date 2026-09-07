@@ -1,4 +1,4 @@
-# RedNote Translate
+# RedNote (小红书) Translate
 
 Live in-place translation for RedNote (小红书 / `com.xingin.xhs`) on Android, without
 touching the app's own auto-translate — so your feed and recommendations stay exactly
