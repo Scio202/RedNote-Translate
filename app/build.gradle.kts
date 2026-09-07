@@ -16,11 +16,25 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        // Only exists when CI has a keystore to hand; locally there is nothing to do.
+        System.getenv("RELEASE_STORE_FILE")?.takeIf { it.isNotBlank() }?.let { path ->
+            create("release") {
+                storeFile = file(path)
+                storePassword = System.getenv("RELEASE_STORE_PASSWORD")
+                keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
-            // Debug-signed so `assembleRelease` still produces an installable APK.
-            signingConfig = signingConfigs.getByName("debug")
+            // A real key when one is supplied, otherwise debug-signed so a plain
+            // assembleRelease still produces an installable APK.
+            signingConfig = signingConfigs.findByName("release")
+                ?: signingConfigs.getByName("debug")
         }
     }
 

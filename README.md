@@ -57,28 +57,45 @@ UI, where a person is present to answer it.
 - Labels clear the instant you scroll and redraw ~280ms after it settles, and bounds are
   re-measured after translation, so a label never lands on a position that has moved.
 
-## Build
-
-```
-tools\build.cmd
-```
-
-Produces `app\build\outputs\apk\release\app-release.apk` (debug-signed, so it installs
-directly). The toolchain lives in `%USERPROFILE%\android-toolchain` — delete that folder
-to remove it.
-
 ## Install
 
+Grab the APK from [Releases](../../releases) and open it on the phone (allow install
+from unknown sources). Then turn the service on under
+**Settings > Accessibility > Installed apps > RedNote Translate**.
+
+A Quick Settings tile is included so you can pause the overlay without leaving RedNote.
+
+## Build it yourself
+
 ```
-%USERPROFILE%\android-toolchain\sdk\platform-tools\adb.exe install -r app\build\outputs\apk\release\app-release.apk
+gradlew assembleRelease
 ```
 
-Or copy the APK to the phone and tap it (allow install from unknown sources).
+Needs JDK 17 and an Android SDK; `tools/setup.ps1` installs both into
+`%USERPROFILE%ndroid-toolchain` on Windows if you have neither. Output lands in
+`app/build/outputs/apk/release/`.
 
-Then: **Settings › Accessibility › Installed apps › RedNote Translate › On.**
+## Publishing a release
 
-A Quick Settings tile is included so you can pause the overlay without leaving RedNote —
-add it from the QS panel's edit screen.
+Tag a commit and CI builds the APK and attaches it:
+
+```
+git tag v1.0.0
+git push --tags
+```
+
+Without a signing key the APK is debug-signed. That installs fine, but every CI run
+generates a different debug key, so an update will refuse to install over an earlier
+release - Android treats it as a different app. To sign releases properly, once:
+
+```
+keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias release
+base64 -w0 release.jks
+```
+
+Then add four repository secrets: `KEYSTORE_BASE64` (that base64 string),
+`KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`. Keep `release.jks` out of the repo -
+losing it means no more in-place updates.
 
 ## UI
 
