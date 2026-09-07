@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">RedNote Translate</string>
+    <string name="service_label">RedNote Translate overlay</string>
+    <string name="service_description">Reads text from the RedNote app and draws a translation over it. Only the RedNote screen is ever read. Other apps are watched solely to notice when RedNote is no longer in front, so the translation overlay can be removed.</string>
+</resources>
