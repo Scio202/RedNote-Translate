@@ -1,6 +1,19 @@
 name: Release APK
 
-# Tag a commit to publish: git tag v1.0.0 && git push --tags
+# Maintainer notes
+# ----------------
+# Publish:  git tag v1.0.0  then  git push --tags
+#
+# Signing: with no keystore the APK is debug-signed. That installs fine, but every
+# runner generates a different debug key, so an update refuses to install over an
+# earlier release - Android treats it as a different app. To sign properly, once:
+#
+#   keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 2048 #           -validity 10000 -alias release
+#   base64 -w0 release.jks
+#
+# Then add repository secrets KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS and
+# KEY_PASSWORD. Keep release.jks out of the repo; losing it means no more in-place
+# updates, ever.
 on:
   push:
     tags: ["v*"]

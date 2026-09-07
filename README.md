@@ -72,30 +72,8 @@ gradlew assembleRelease
 ```
 
 Needs JDK 17 and an Android SDK; `tools/setup.ps1` installs both into
-`%USERPROFILE%ndroid-toolchain` on Windows if you have neither. Output lands in
+`%USERPROFILE%\android-toolchain` on Windows if you have neither. Output lands in
 `app/build/outputs/apk/release/`.
-
-## Publishing a release
-
-Tag a commit and CI builds the APK and attaches it:
-
-```
-git tag v1.0.0
-git push --tags
-```
-
-Without a signing key the APK is debug-signed. That installs fine, but every CI run
-generates a different debug key, so an update will refuse to install over an earlier
-release - Android treats it as a different app. To sign releases properly, once:
-
-```
-keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias release
-base64 -w0 release.jks
-```
-
-Then add four repository secrets: `KEYSTORE_BASE64` (that base64 string),
-`KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`. Keep `release.jks` out of the repo -
-losing it means no more in-place updates.
 
 ## UI
 
