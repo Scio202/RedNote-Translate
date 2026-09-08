@@ -91,6 +91,12 @@ Needs JDK 17 and an Android SDK; `tools/setup.ps1` installs both into
 `%USERPROFILE%\android-toolchain` on Windows if you have neither. Output lands in
 `app/build/outputs/apk/release/`.
 
+## Licence
+
+Copyright © 2026 Leonardo Gonzalez. Licensed under the
+[GNU Affero General Public License v3.0](LICENSE) — you may use, modify and redistribute
+it, but any distributed version must also be open source under the same licence.
+
 ## UI
 
 The settings screen follows One UI (24dp keylines, 26dp flat cards, collapsing large title,
