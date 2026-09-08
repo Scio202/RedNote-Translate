@@ -28,6 +28,17 @@ android {
         }
     }
 
+    // ML Kit ships native libraries for every architecture; splitting drops a download
+    // from ~68MB to ~25MB. The universal APK stays for anyone unsure what their phone is.
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = true
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false

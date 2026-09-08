@@ -14,6 +14,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.os.SystemClock
 import android.util.Log
 import android.util.TypedValue
@@ -150,6 +151,8 @@ class TransService : AccessibilityService(), SharedPreferences.OnSharedPreferenc
         wm.addView(view, lp)
         overlay = view
 
+        Translator.loadCache(this)
+
         // Pull the language pair down now rather than on the first note the user opens.
         scope.launch { Translator.ensureModel(prefs.lang) }
     }
@@ -217,6 +220,7 @@ class TransService : AccessibilityService(), SharedPreferences.OnSharedPreferenc
         handler.removeCallbacksAndMessages(null)
         scope.cancel()
         prefs.unregisterOnSharedPreferenceChangeListener(this)
+        Translator.saveCache(this)
         overlay?.let { runCatching { wm.removeView(it) } }
         overlay = null
         dropShot()
@@ -239,7 +243,7 @@ class TransService : AccessibilityService(), SharedPreferences.OnSharedPreferenc
         // Video moves without firing accessibility events, so nothing would ask for a
         // fresh sample. This heartbeat is what makes matched colours track the picture
         // rather than only updating when the screen is touched.
-        if (prefs.sampleBg && isReelPage()) {
+        if (prefs.sampleBg && isReelPage() && screenOn()) {
             handler.removeCallbacks(scanTask)
             handler.postDelayed(scanTask, RESAMPLE_MS)
         }
@@ -263,6 +267,7 @@ class TransService : AccessibilityService(), SharedPreferences.OnSharedPreferenc
         // over again. It writes to the cache and redraws if the screen is still there.
         scope.launch {
             if (Translator.fillCloud(pending, target, this@TransService)) {
+                Translator.saveCache(this@TransService)
                 val afterCloud = measure() ?: return@launch
                 withSample { drawCached(afterCloud, target) }
             }
@@ -378,6 +383,10 @@ class TransService : AccessibilityService(), SharedPreferences.OnSharedPreferenc
         )
         else -> a ?: b
     }
+
+    /** A heartbeat that samples colours off a screen nobody is looking at is pure drain. */
+    private fun screenOn(): Boolean =
+        getSystemService(PowerManager::class.java)?.isInteractive != false
 
     private fun isTargetInFront(): Boolean =
         runCatching { rootInActiveWindow?.packageName?.toString() }.getOrNull() == TARGET_PKG

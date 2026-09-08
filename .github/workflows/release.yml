@@ -51,18 +51,23 @@ jobs:
           RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew --no-daemon assembleRelease
 
-      - name: Name the file after the tag
+      # One APK per architecture plus a universal fallback, all named after the tag.
+      - name: Name the files after the tag
         run: |
-          mv app/build/outputs/apk/release/app-release.apk \
-             "rednote-translate-${GITHUB_REF_NAME}.apk"
+          for f in app/build/outputs/apk/release/*.apk; do
+            abi=$(basename "$f" .apk | sed 's/^app-//; s/-release$//')
+            mv "$f" "rednote-translate-${GITHUB_REF_NAME}-${abi}.apk"
+          done
+          ls -lh rednote-translate-*.apk
 
       - uses: softprops/action-gh-release@v2
         with:
           files: rednote-translate-*.apk
           generate_release_notes: true
           body: |
-            Sideload this APK, then turn the service on under
-            **Settings › Accessibility › Installed apps › RedNote Translate**.
+            Take `universal` if unsure, or `arm64-v8a` for any phone from the last
+            several years - it is a third of the size. Sideload it, then turn the service
+            on under **Settings › Accessibility › Installed apps › RedNote Translate**.
 
             Translation runs on-device by default and needs no account. Google and
             DeepSeek are optional back ends you can pick in the app.

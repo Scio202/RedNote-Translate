@@ -2,6 +2,7 @@ package dev.leo.rednotetrans
 
 import android.content.Context
 import android.util.LruCache
+import java.io.File
 import com.google.mlkit.common.model.DownloadConditions
 import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.nl.translate.Translation
@@ -52,11 +53,17 @@ object Translator {
         private set
 
     /**
-     * A failing cloud engine is retried after this, rather than never again. Caching the
-     * fallback under the cloud key was what made one bad call look like a permanent
-     * downgrade to on-device.
+     * How long a failing cloud engine is left alone. A timeout or a dropped connection
+     * clears up on its own, so it is worth retrying soon; a rejected key or an empty
+     * balance will not fix itself in the next minute and retrying only burns requests.
      */
-    private const val RETRY_AFTER_MS = 60_000L
+    private const val RETRY_TRANSIENT_MS = 20_000L
+    private const val RETRY_REJECTED_MS = 5 * 60_000L
+
+    /** Translations already paid for, kept across restarts. */
+    private const val CACHE_FILE = "translations.tsv"
+    private var loaded = false
+    private var dirty = false
 
     @Volatile
     private var cloudBlockedUntil = 0L
@@ -97,6 +104,45 @@ object Translator {
      */
     fun cachedExact(text: String, target: String, engine: String): String? =
         cache.get(key(text, target, engine))
+
+    /**
+     * Reloads what earlier runs already translated. Without this every restart re-buys the
+     * same strings from the cloud engine, which is exactly what ran up the first API bill.
+     */
+    @Synchronized
+    fun loadCache(ctx: Context) {
+        if (loaded) return
+        loaded = true
+        runCatching {
+            val f = File(ctx.filesDir, CACHE_FILE)
+            if (!f.exists()) return
+            f.forEachLine { line ->
+                val tab = line.indexOf('\t')
+                if (tab > 0) {
+                    cache.put(unescape(line.substring(0, tab)), unescape(line.substring(tab + 1)))
+                }
+            }
+        }
+    }
+
+    /** Writes the cache back out. Cheap enough to call whenever something new lands. */
+    @Synchronized
+    fun saveCache(ctx: Context) {
+        if (!dirty) return
+        dirty = false
+        runCatching {
+            File(ctx.filesDir, CACHE_FILE).bufferedWriter().use { w ->
+                cache.snapshot().forEach { (k, v) ->
+                    w.write(escape(k)); w.write("\t"); w.write(escape(v)); w.newLine()
+                }
+            }
+        }
+    }
+
+    // A post title can contain newlines, and the file is one record per line.
+    private fun escape(s: String) = s.replace("\\", "\\\\").replace("\n", "\\n").replace("\t", "\\t")
+    private fun unescape(s: String) =
+        s.replace("\\t", "\t").replace("\\n", "\n").replace("\\\\", "\\")
 
     @Synchronized
     private fun clientFor(target: String): MlTranslator {
@@ -170,14 +216,20 @@ object Translator {
                 inFlight.removeAll(pending.toSet())
             }
             if (done.size < pending.size) {
-                cloudError = when (engine) {
+                val why = when (engine) {
                     Prefs.ENGINE_GOOGLE -> GoogleWebEngine.lastError
                     else -> DeepSeekEngine.lastError ?: "No API key set"
                 }
-                cloudBlockedUntil = System.currentTimeMillis() + RETRY_AFTER_MS
+                cloudError = why
+                val rejected = why != null &&
+                    ("401" in why || "402" in why || "API key" in why)
+                cloudBlockedUntil = System.currentTimeMillis() +
+                    if (rejected) RETRY_REJECTED_MS else RETRY_TRANSIENT_MS
             } else {
                 cloudError = null
+                cloudBlockedUntil = 0
             }
+            if (done.isNotEmpty()) dirty = true
             done.isNotEmpty()
         }
     }
@@ -235,7 +287,7 @@ object Translator {
                         runCatching { clientFor(target).translate(source).await() }
                             .getOrNull()
                             ?.takeIf { it.isNotBlank() }
-                            ?.let { cache.put(key(text, target, engine), it) }
+                            ?.let { cache.put(key(text, target, engine), it); dirty = true }
                     }
                 }
             }.awaitAll()
