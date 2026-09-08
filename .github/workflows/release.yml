@@ -8,7 +8,7 @@ name: Release APK
 # runner generates a different debug key, so an update refuses to install over an
 # earlier release - Android treats it as a different app. To sign properly, once:
 #
-#   keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 2048 #           -validity 10000 -alias release
+#   keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 2048 -alias release
 #   base64 -w0 release.jks
 #
 # Then add repository secrets KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS and

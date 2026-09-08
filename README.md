@@ -12,6 +12,14 @@ offline), **Google Translate**, or **DeepSeek** for Chinese slang and cultural n
 Built with Kotlin and Jetpack Compose, using an Android AccessibilityService overlay.
 No root, and no "draw over other apps" permission.
 
+## Screenshots
+
+| Before | After |
+|---|---|
+| ![RedNote main feed in Chinese, before translation](docs/feed-before.jpg) | ![The same RedNote feed with English translations covering the Chinese post titles](docs/feed-after.jpg) |
+| ![A RedNote reel with a Chinese caption](docs/reel-before.jpg) | ![The same reel with the caption translated to English, the label colour sampled from the video behind it](docs/reel-after.jpg) |
+| ![RedNote comments in Chinese](docs/comments-before.jpg) | ![The same comments translated to English in place](docs/comments-after.jpg) |
+
 ## How it works
 
 Android has no extension API, so nothing can inject into another app's UI. The closest
